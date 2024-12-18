@@ -1,0 +1,71 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <Encoder.h>
+#include <Servo.h>
+
+// LCD I2C configuration
+LiquidCrystal_I2C lcd(0x27, 16, 2); // Adjust 0x27 if needed
+
+// Rotary Encoder Pins
+#define CLK_PIN D6
+#define DT_PIN D7
+#define SW_PIN D5
+
+// Servo configuration
+#define SERVO_PIN D0
+Servo myServo;
+
+// Rotary Encoder setup
+Encoder myEnc(CLK_PIN, DT_PIN);
+long lastPosition = -999;
+
+// Servo angle
+int angle = 90; // Initial angle (servo starts at 90 degrees)
+
+void setup() {
+  // Initialize serial monitor for debugging
+  Serial.begin(115200);
+
+  // Initialize LCD
+  lcd.init();        // Initialize the LCD
+  lcd.backlight();   // Turn on the backlight
+  lcd.setCursor(0, 0);
+  lcd.print("Servo Angle:");
+  lcd.setCursor(0, 1);
+  lcd.print(angle);
+
+  // Initialize Servo
+  myServo.attach(SERVO_PIN);
+  myServo.write(angle); // Set initial servo position
+
+  // Configure button pin
+  pinMode(SW_PIN, INPUT_PULLUP);
+}
+
+void loop() {
+  // Read rotary encoder position
+  long newPosition = myEnc.read() / 4; // Dividing for smoother increments
+  if (newPosition != lastPosition) {
+    angle = constrain(angle + (newPosition - lastPosition), 0, 180); // Clamp between 0 and 180
+    lastPosition = newPosition;
+
+    // Update servo position
+    myServo.write(angle);
+
+    // Update LCD display
+    lcd.setCursor(0, 1);
+    lcd.print("Angle: ");
+    lcd.print(angle);
+    lcd.print("    "); // Clear any leftover characters
+
+    // Debugging
+    Serial.println(angle);
+  }
+
+  // Optional: Read encoder button press (not used in this example)
+  if (digitalRead(SW_PIN) == LOW) {
+    Serial.println("Button Pressed!");
+    delay(300); // Simple debounce
+  }
+}
+
